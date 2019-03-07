@@ -13,6 +13,7 @@
     - sites_enabled_config: /etc/nginx/sites-enabled/selene.conf
     - repo_branch: aws-deploy
     - nginx_config: ./nginx.conf
+    - selene_service: ./selene.service
   tasks:
     - name: install nginx
       apt:
@@ -68,19 +69,18 @@
         sudo npm audit fix --force --unsafe-perm=true
         sudo npm install --unsafe-perm=true
 
-    - name: Install pm2
-      npm:
-        name: pm2
-        global: yes
-        production: yes
-        state: present
-
-    - name: Start app with pm2
-      shell: |
-        cd /home/ubuntu/selene-ah-frontend
-        pm2 start server.js --name server
+    - name: Create a service to run the app
+      copy:
+        src: "{{selene_service}}"
+        dest: /etc/systemd/system/selene.service
 
     - name: Build the react app
       shell: |
        cd /home/ubuntu/selene-ah-frontend
        sudo npm run build
+
+    - name: Set the selene ah app to run on and restart on instance start
+      shell: |
+        sudo systemctl daemon-reload
+        sudo systemctl start selene.service
+        sudo systemctl enable selene.service
