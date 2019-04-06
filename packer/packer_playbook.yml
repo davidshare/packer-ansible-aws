@@ -15,24 +15,6 @@
     - nginx_config: ./nginx.conf
     - selene_service: ./selene.service
   tasks:
-    # - name: configure security groups
-    #   ec2_group:
-    #     name: AWS_selene_ansible_group
-    #     description: rules allowing traffic on port 22 and 80
-    #     region: us-east-2
-    #     rules:
-    #       - proto: tcp
-    #         from_port: 80
-    #         to_port: 80
-    #         cidr_ip: 0.0.0.0/0
-    #       - proto: tcp
-    #         from_port: 22
-    #         to_port: 22
-    #         cidr_ip: 0.0.0.0/0
-    #     rules_egress:
-    #       - proto: all
-    #         cidr_ip: 0.0.0.0/0
-
     - name: install nginx
       apt:
         name: nginx
