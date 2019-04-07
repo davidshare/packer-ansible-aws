@@ -6,13 +6,15 @@ source ./.env
 #switch to the packer directory
 cd ./packer
 
-# run build with packer and get the packer output
+# run build with packer and store the packer output in the packer_output.txt file
+# the output will contain the ami-id for the image that has been provisioned by packer
+# this ami_id will be used by terraform to provition an instance
 packer build ./packer_template.json 2>&1 | tee packer_output.txt
 
 # exit the packer directory
 cd ../
 
-# get the AMI id
+# the ami_extractor will get the ami_id of the image that has been provisioned using packer and ansible from the output file created
 bash ami_extractor.sh
 
 # switch to the terraform directory

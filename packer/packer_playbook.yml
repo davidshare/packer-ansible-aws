@@ -1,8 +1,17 @@
 ---
+# specify the host to use for ansible
 - hosts: all
+
+  # enable privilege escalation
   become: yes
+
+  # specify that the user's privileges can be escalated to that of a super admin
   become_method: sudo
+
+  # specify the user of the ubuntu instance you will be using
   remote_user: ubuntu
+
+  # define variables to be used in provisioning the instance
   vars:
     - ansible_python_interpreter: "/usr/bin/python3"
     - repository: https://github.com/andela/selene-ah-frontend.git
@@ -14,71 +23,85 @@
     - repo_branch: aws-deploy
     - nginx_config: ./nginx.conf
     - selene_service: ./selene.service
+
+  # define the tasks to be performed while provisioning the instance
   tasks:
+
+    # install nginx for reverse proxy
     - name: install nginx
       apt:
         name: nginx
         update_cache: yes
         state: present
 
+    # remove the nginx default file
     - name: Remove nginx default file
       file:
         path: "{{sites_available}}/default"
         state: absent
 
+    # configure nginx
     - name: Configure nginx
       copy:
         src: "{{nginx_config}}"
         dest: "{{sites_available_config}}"
 
+    # create a symlink between the sites_available and sites_enabled directories of nginx
     - name: Create nginx symlink
       file:
         src: "{{sites_available_config}}"
         dest: "{{sites_enabled_config}}"
         state: link
-
+    # start the nginx service
     - name: Start nginx
       service:
         name: nginx
         state: started
 
+    # add a gpg key for installation of node.js
     - name: Add gpg key for NodeJS LTS
       apt_key:
         url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
         state: present
 
+    # download node.js from the debian repository
     - name: Install the NodeJS LTS repo
       apt_repository:
         repo: "deb https://deb.nodesource.com/node_10.x {{ ansible_distribution_release }} main"
         state: present
         update_cache: yes
 
+    # install node.js
     - name: install nodejs
       apt:
         name: nodejs
 
+    # clone the project repository
     - name: clone repository
       git:
         repo: "{{repository}}"
         version: "{{repo_branch}}"
         dest: "{{app_dir}}"
 
+    # install the node modules
     - name: Install node modules
       shell: |
         cd /home/ubuntu/selene-ah-frontend
         sudo npm audit fix --force --unsafe-perm=true
         sudo npm install --unsafe-perm=true
-
+    # create a systemd service to start and keep the app running
     - name: Create a service to run the app
       copy:
         src: "{{selene_service}}"
         dest: /etc/systemd/system/selene.service
 
+    # run the build for the react app
     - name: Build the react app
       shell: |
        cd /home/ubuntu/selene-ah-frontend
        sudo npm run build
 
+    # start the app as a service
     - name: Set the selene ah app to run on and restart on instance start
       shell: |
         sudo systemctl daemon-reload
